@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using MvcNetCoreEFMultiplesBBDD.Data;
 using MvcNetCoreEFMultiplesBBDD.Models;
 
@@ -7,50 +8,57 @@ namespace MvcNetCoreEFMultiplesBBDD.Repositories
     #region Views y Procedures
     /*
 --VIEW DE SQL
-create view V_EMPLEADOS
-as
+CREATE PROCEDURE SP_INSERT_EMPLEADO_DEPARTAMENTO
+(@apellido nvarchar(50), @oficio nvarchar(50), @dir int, @salario int, @comision int, @deptnombre nvarchar(50))
+AS
+	DECLARE @empNo int
+	select @empNo = MAX(EMP_NO) + 1 from EMP
+	DECLARE @deptno int
+	select @deptno = DEPT_NO FROM DEPT WHERE DEPT.DNOMBRE=@deptnombre
 
-SELECT EMP_NO, APELLIDO, SALARIO,DEPT.DEPT_NO, DEPT.DNOMBRE, DEPT.LOC FROM EMP
-INNER JOIN DEPT
-ON DEPT.DEPT_NO = EMP.DEPT_NO
-go
-    -----------------------------------------------
-    --View de ORACLE
+	INSERT INTO EMP (EMP_NO,APELLIDO,OFICIO,DIR,FECHA_ALT,SALARIO,COMISION,DEPT_NO) VALUES 
+	(
+	@empNo,@apellido,@oficio,@dir,GETDATE(),@salario,@comision,@deptno
+	)
+GO
 
-CREATE OR REPLACE VIEW V_EMPLEADOS AS
-SELECT 
-    EMP.EMP_NO,
-    EMP.APELLIDO,
-    EMP.SALARIO,
-    DEPT.DEPT_NO,
-    DEPT.DNOMBRE,
-    DEPT.LOC
-FROM 
-    EMP
-INNER JOIN 
-    DEPT ON DEPT.DEPT_NO = EMP.DEPT_NO;
+-----------------------------------------------
+exec SP_INSERT_EMPLEADO_DEPARTAMENTO 'ANGEL','CURRITO',3214,23000,12,'CONTABILIDAD'
 
      */
     #endregion
-    public class RepositoryEmpleados
+    public class RepositoryEmpleados: IRepositoryEmpleados
     {
-        private EmpleadosContext context;
-            public RepositoryEmpleados(EmpleadosContext context)
+        private HospitalContext context;
+            public RepositoryEmpleados(HospitalContext context)
         {
             this.context = context;
         }
-        public async Task<List<EmpleadoDepartamento>> GetEmpleadosDepartamentoAsync()
+        public async Task<List<VistaEmpleado>> GetEmpleadosVistaAsync()
         {
-            var consulta = from datos in context.Empleados
+            var consulta = from datos in context.VistaEmpleados
                            select datos;
             return await consulta.ToListAsync();
         }
-        public async Task<EmpleadoDepartamento> FindEmpleadoAsync(int idEmpleado)
+        public async Task<VistaEmpleado> GetDetallesEmpleadoAsync(int id)
         {
-            var consulta = from datos in context.Empleados
-                           where datos.Id_Empleado == idEmpleado
+            var consulta = from datos in context.VistaEmpleados
+                           where datos.Id_Empleado == id
                            select datos;
             return await consulta.FirstOrDefaultAsync();
+        }
+
+        public Task InsertEmpleadoDepartamentoAsync(string apellido, string oficio, int dir, int salario, int comision, string NombreDept)
+        {
+            string sql = "SP_INSERT_EMPLEADO_DEPARTAMENTO @apellido,@oficio,@dir,@salario,@comision,@deptnombre";
+            SqlParameter pamapellido = new SqlParameter("@apellido", apellido);
+            SqlParameter pamoficio = new SqlParameter("@oficio", oficio);
+            SqlParameter pamdir = new SqlParameter("@dir", dir);
+            SqlParameter pamsalario = new SqlParameter("@salario", salario);
+            SqlParameter pamcomision = new SqlParameter("@comision", comision);
+            SqlParameter pamdeptno = new SqlParameter("@deptnombre", NombreDept);
+
+            return context.Database.ExecuteSqlRawAsync(sql, pamapellido, pamoficio, pamdir, pamsalario, pamcomision, pamdeptno);
         }
     }
 }

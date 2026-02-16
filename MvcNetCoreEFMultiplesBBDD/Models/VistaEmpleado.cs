@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace MvcNetCoreEFMultiplesBBDD.Models
 {
     [Table ("V_EMPLEADOS")]
-    public class EmpleadoDepartamento
+    public class VistaEmpleado
     {
         [Key]
         [Column("EMP_NO")]

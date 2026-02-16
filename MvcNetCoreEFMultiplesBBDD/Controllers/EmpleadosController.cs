@@ -6,20 +6,31 @@ namespace MvcNetCoreEFMultiplesBBDD.Controllers
 {
     public class EmpleadosController : Controller
     {
-        private RepositoryEmpleados repo;
-        public EmpleadosController(RepositoryEmpleados repo)
+        private IRepositoryEmpleados repo;
+        public EmpleadosController(IRepositoryEmpleados repo)
         {
             this.repo = repo;
         }
         public async Task<IActionResult> Index()
         {
-            List<EmpleadoDepartamento> empleados = await this.repo.GetEmpleadosDepartamentoAsync();
+            List<VistaEmpleado> empleados = await this.repo.GetEmpleadosVistaAsync();
             return View(empleados);
         }
         public async Task<IActionResult> Details(int id)
         {
-            EmpleadoDepartamento empleado = await this.repo.FindEmpleadoAsync(id);
+            VistaEmpleado empleado = await this.repo.GetDetallesEmpleadoAsync(id);
             return View(empleado);
+        }
+        public async Task<IActionResult> Create()
+        {
+            return View();
+        }
+        [HttpPost]
+        public async Task<IActionResult> Create(string apellido, string oficio, int dir, int salario, int comision,
+            string NombreDept)
+        {
+            await this.repo.InsertEmpleadoDepartamentoAsync(apellido, oficio, dir, salario, comision, NombreDept);
+            return RedirectToAction("Index");
         }
     }
 }
