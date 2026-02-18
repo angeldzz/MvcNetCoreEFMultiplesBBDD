@@ -91,7 +91,7 @@ DELIMITER ;
             return await consulta.FirstOrDefaultAsync();
         }
 
-        public async Task InsertEmpleadoDepartamentoAsync(string apellido, string oficio, int dir, int salario, int comision, string NombreDept)
+        public async Task<int> InsertEmpleadoDepartamentoAsync(string apellido, string oficio, int dir, int salario, int comision, string NombreDept)
         {
             string sql = "CALL SP_INSERT_EMPLEADO_DEPARTAMENTO(@p_apellido, @p_oficio, @p_dir, @p_salario, @p_comision, @p_deptnombre)";
             
@@ -104,6 +104,8 @@ DELIMITER ;
 
             await this.context.Database.ExecuteSqlRawAsync(sql,
                 p_apellido, p_oficio, p_dir, p_salario, p_comision, p_deptnombre);
+            // En MySQL, el procedimiento no devuelve un valor de salida.
+            return 1;
         }
     }
 }

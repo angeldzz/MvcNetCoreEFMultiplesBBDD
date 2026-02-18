@@ -29,8 +29,8 @@ namespace MvcNetCoreEFMultiplesBBDD.Controllers
         public async Task<IActionResult> Create(string apellido, string oficio, int dir, int salario, int comision,
             string NombreDept)
         {
-            await this.repo.InsertEmpleadoDepartamentoAsync(apellido, oficio, dir, salario, comision, NombreDept);
-            return RedirectToAction("Index");
+            int empNo = await this.repo.InsertEmpleadoDepartamentoAsync(apellido, oficio, dir, salario, comision, NombreDept);
+            return RedirectToAction("Details", new { id = empNo });
         }
     }
 }

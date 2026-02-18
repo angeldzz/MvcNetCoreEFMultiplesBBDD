@@ -9,11 +9,10 @@ namespace MvcNetCoreEFMultiplesBBDD.Repositories
     /*
 --VIEW DE SQL
 CREATE PROCEDURE SP_INSERT_EMPLEADO_DEPARTAMENTO
-(@apellido nvarchar(50), @oficio nvarchar(50), @dir int, @salario int, @comision int, @deptnombre nvarchar(50))
+(@apellido nvarchar(50), @oficio nvarchar(50), @dir int, @salario int, @comision int, @deptnombre nvarchar(50), @empNo int out)
 AS
-	DECLARE @empNo int
 	select @empNo = MAX(EMP_NO) + 1 from EMP
-	DECLARE @deptno int
+	Declare @deptno int
 	select @deptno = DEPT_NO FROM DEPT WHERE DEPT.DNOMBRE=@deptnombre
 
 	INSERT INTO EMP (EMP_NO,APELLIDO,OFICIO,DIR,FECHA_ALT,SALARIO,COMISION,DEPT_NO) VALUES 
@@ -48,17 +47,30 @@ exec SP_INSERT_EMPLEADO_DEPARTAMENTO 'ANGEL','CURRITO',3214,23000,12,'CONTABILID
             return await consulta.FirstOrDefaultAsync();
         }
 
-        public Task InsertEmpleadoDepartamentoAsync(string apellido, string oficio, int dir, int salario, int comision, string NombreDept)
+        public async Task<int> InsertEmpleadoDepartamentoAsync(string apellido, string oficio, int dir, int salario, int comision, string NombreDept)
         {
-            string sql = "SP_INSERT_EMPLEADO_DEPARTAMENTO @apellido,@oficio,@dir,@salario,@comision,@deptnombre";
+            string sql = "SP_INSERT_EMPLEADO_DEPARTAMENTO @apellido,@oficio,@dir,@salario,@comision,@deptnombre, @deptno OUT";
             SqlParameter pamapellido = new SqlParameter("@apellido", apellido);
             SqlParameter pamoficio = new SqlParameter("@oficio", oficio);
             SqlParameter pamdir = new SqlParameter("@dir", dir);
             SqlParameter pamsalario = new SqlParameter("@salario", salario);
             SqlParameter pamcomision = new SqlParameter("@comision", comision);
-            SqlParameter pamdeptno = new SqlParameter("@deptnombre", NombreDept);
+            SqlParameter pamdeptnombre = new SqlParameter("@deptnombre", NombreDept);
 
-            return context.Database.ExecuteSqlRawAsync(sql, pamapellido, pamoficio, pamdir, pamsalario, pamcomision, pamdeptno);
+            // 2. Definimos el parámetro de salida explícitamente
+            SqlParameter pamEmpno = new SqlParameter
+            {
+                ParameterName = "@deptno",
+                SqlDbType = System.Data.SqlDbType.Int,
+                Direction = System.Data.ParameterDirection.Output // Crucial
+            };
+            // 3. Ejecutamos y esperamos a que termine
+            await context.Database.ExecuteSqlRawAsync(sql, pamapellido, pamoficio, pamdir, pamsalario, pamcomision, pamdeptnombre, pamEmpno);
+
+            // 4. Recuperamos el valor después de la ejecución
+            int idGenerado = (int)pamEmpno.Value;
+
+            return idGenerado;
         }
     }
 }

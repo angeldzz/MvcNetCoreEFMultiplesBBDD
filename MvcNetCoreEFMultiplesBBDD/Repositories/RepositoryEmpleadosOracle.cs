@@ -77,7 +77,7 @@ END;
             return await consulta.FirstOrDefaultAsync();
         }
 
-        public async Task InsertEmpleadoDepartamentoAsync(string apellido, string oficio, int dir, int salario, int comision, string NombreDept)
+        public async Task<int> InsertEmpleadoDepartamentoAsync(string apellido, string oficio, int dir, int salario, int comision, string NombreDept)
         {
             string sql = "BEGIN SP_INSERT_EMPLEADO_DEPARTAMENTO(:p_apellido, :p_oficio, :p_dir, :p_salario, :p_comision, :p_deptnombre); END;";
 
@@ -89,6 +89,7 @@ END;
             OracleParameter pamdeptnombre = new OracleParameter("p_deptnombre", NombreDept);
 
             await this.context.Database.ExecuteSqlRawAsync(sql, pamapellido, pamoficio, pamdir, pamsalario, pamcomision, pamdeptnombre);
+            return 1; // En Oracle, no podemos obtener el deptno directamente como parámetro de salida, así que devolvemos un valor fijo o podríamos modificar el procedimiento para devolverlo.
         }
     }
 }
