@@ -35,7 +35,8 @@ CREATE PROCEDURE SP_INSERT_EMPLEADO_DEPARTAMENTO
     IN p_dir INT, 
     IN p_salario INT, 
     IN p_comision INT, 
-    IN p_deptnombre VARCHAR(50)
+    IN p_deptnombre VARCHAR(50),
+    OUT p_empNoOut INT -- Parámetro de salida
 )
 BEGIN
     DECLARE v_empNo INT;
@@ -50,6 +51,8 @@ BEGIN
 
     INSERT INTO EMP (EMP_NO, APELLIDO, OFICIO, DIR, FECHA_ALT, SALARIO, COMISION, DEPT_NO) 
     VALUES (v_empNo, p_apellido, p_oficio, p_dir, NOW(), p_salario, p_comision, v_deptno);
+
+    SET p_empNoOut = v_empNo;
 END //
 
 DELIMITER ;
@@ -93,8 +96,9 @@ DELIMITER ;
 
         public async Task<int> InsertEmpleadoDepartamentoAsync(string apellido, string oficio, int dir, int salario, int comision, string NombreDept)
         {
-            string sql = "CALL SP_INSERT_EMPLEADO_DEPARTAMENTO(@p_apellido, @p_oficio, @p_dir, @p_salario, @p_comision, @p_deptnombre)";
-            
+            // 1. Debes incluir el parámetro de salida en el CALL, separado por comas
+            string sql = "CALL SP_INSERT_EMPLEADO_DEPARTAMENTO(@p_apellido, @p_oficio, @p_dir, @p_salario, @p_comision, @p_deptnombre, @p_empNoOut)";
+
             var p_apellido = new MySqlParameter("@p_apellido", apellido);
             var p_oficio = new MySqlParameter("@p_oficio", oficio);
             var p_dir = new MySqlParameter("@p_dir", dir);
@@ -102,10 +106,23 @@ DELIMITER ;
             var p_comision = new MySqlParameter("@p_comision", comision);
             var p_deptnombre = new MySqlParameter("@p_deptnombre", NombreDept);
 
+            // 2. Definimos el parámetro de salida (OUT)
+            var p_empNoOut = new MySqlParameter
+            {
+                ParameterName = "@p_empNoOut",
+                MySqlDbType = MySqlDbType.Int32,
+                Direction = System.Data.ParameterDirection.Output
+            };
+
+            // 3. Pasamos todos los parámetros, incluyendo el de salida
             await this.context.Database.ExecuteSqlRawAsync(sql,
-                p_apellido, p_oficio, p_dir, p_salario, p_comision, p_deptnombre);
-            // En MySQL, el procedimiento no devuelve un valor de salida.
-            return 1;
+                p_apellido, p_oficio, p_dir, p_salario, p_comision, p_deptnombre, p_empNoOut);
+
+            // 4. Recuperamos el valor real devuelto por el procedimiento
+            // Esto es lo que hará que el Redirect en el controlador vaya al ID correcto
+            int idGenerado = Convert.ToInt32(p_empNoOut.Value);
+
+            return idGenerado;
         }
     }
 }
